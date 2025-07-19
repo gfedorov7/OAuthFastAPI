@@ -1,0 +1,35 @@
+services:
+  backend:
+    build: .
+    container_name: boggart_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.backend
+    networks:
+      - boggart-network
+
+  db:
+    image: postgres:latest
+    container_name: boggart_postgresql
+    restart: always
+    env_file:
+      - .env.postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lin/postgresql/data
+    networks:
+      - boggart-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  boggart-network:
+    driver: bridge
+
+volumes:
+  pg_data:
