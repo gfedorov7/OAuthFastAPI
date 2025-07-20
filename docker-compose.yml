@@ -8,7 +8,8 @@ services:
       - .env.backend
     networks:
       - boggart-network
-
+    volumes:
+      - .:/app
   db:
     image: postgres:latest
     container_name: boggart_postgresql
@@ -18,7 +19,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pg_data:/var/lin/postgresql/data
+      - pg_data:/var/lib/postgresql/data
     networks:
       - boggart-network
     healthcheck:
