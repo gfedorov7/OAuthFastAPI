@@ -1,17 +1,24 @@
 from fastapi import APIRouter, Response, Request, Depends
 
+from src.api.auth.dependencies.repositories_dependencies import get_user_repository
+from src.api.auth.models import User
+from src.api.auth.schemas import UserRead
+from src.api.auth.services.current_user_service import CurrentUserService
 from src.api.auth.services.exchange_code_to_token_service import ExchangeCodeToTokenService
 from src.api.auth.services.google_login_service import GoogleLoginService
 from src.api.auth.dependencies.service_dependencies import (
     get_google_login_with_cookie_and_hashlib_service, get_exchange_code_to_token_with_httpx_and_cookie_service,
-    get_user_save_service, get_save_token_service, get_refresh_token_service
+    get_user_save_service, get_save_token_service, get_refresh_token_service, get_current_user_service
 )
 from src.api.auth.services.check_valid_token_service import CheckValidTokenService
 from src.api.auth.dependencies.service_dependencies import get_check_valid_token_with_cookie_and_hmac_service
 from src.api.auth.services.save_tokens_service import SaveTokensService
 from src.api.auth.services.save_user_service import UserSaveService
 from src.api.auth.services.refresh_token_service import RefreshTokenService
+from src.api.auth.utils.get_token_from_header import get_token_from_header
+from src.database.base_repository import BaseRepository
 from src.storage.storage_manager import ResponseAwareStorageManager
+from src.pagination import PaginationModel
 
 
 router = APIRouter(tags=["Google OAuth"])
@@ -71,3 +78,18 @@ async def auth_refresh(
         "token": token,
         "user_id": user_id,
     }
+
+@router.get("/users")
+async def get_users(
+        limit: int = 10,
+        offset: int = 0,
+        token: str = Depends(get_token_from_header),
+        current_user: CurrentUserService = Depends(get_current_user_service),
+        user_repo: BaseRepository[User] = Depends(get_user_repository),
+):
+    await current_user.get_current_user(token)
+    count = await user_repo.count()
+    users = await user_repo.get_all(offset, limit)
+    users_pydantic = [UserRead.model_validate(user, from_attributes=True) for user in users]
+
+    return PaginationModel[UserRead](items=users_pydantic, total=count)
