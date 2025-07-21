@@ -30,6 +30,12 @@ class UserCreate(BaseModel):
     full_name: str
     image: str
 
+class UserRead(BaseModel):
+    email: str
+    full_name: str
+    image: str
+    created_at: datetime
+
 class TokenSave(BaseModel):
     access_token: str
     expires_at: datetime
