@@ -25,6 +25,7 @@ class ExchangeCode(CodeMixin):
     redirect_uri: str
 
 class UserCreate(BaseModel):
+    user_oauth_id: str
     email: str
     full_name: str
     image: str
@@ -32,7 +33,7 @@ class UserCreate(BaseModel):
 class TokenSave(BaseModel):
     access_token: str
     expires_at: datetime
-    refresh_token: str
+    refresh_token: str | None = None
     provider: str = "google"
     is_active: bool
     user_id: int
