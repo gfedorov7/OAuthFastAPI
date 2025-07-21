@@ -1,16 +1,16 @@
 from fastapi import APIRouter, Response, Request, Depends
-from fastapi.responses import RedirectResponse
 
 from src.api.auth.services.exchange_code_to_token_service import ExchangeCodeToTokenService
 from src.api.auth.services.google_login_service import GoogleLoginService
 from src.api.auth.dependencies.service_dependencies import (
     get_google_login_with_cookie_and_hashlib_service, get_exchange_code_to_token_with_httpx_and_cookie_service,
-    get_user_save_service, get_save_token_service
+    get_user_save_service, get_save_token_service, get_refresh_token_service
 )
 from src.api.auth.services.check_valid_token_service import CheckValidTokenService
 from src.api.auth.dependencies.service_dependencies import get_check_valid_token_with_cookie_and_hmac_service
 from src.api.auth.services.save_tokens_service import SaveTokensService
 from src.api.auth.services.save_user_service import UserSaveService
+from src.api.auth.services.refresh_token_service import RefreshTokenService
 from src.storage.storage_manager import ResponseAwareStorageManager
 
 
@@ -55,4 +55,19 @@ async def login_callback(
     return {
         "user": user,
         "token": token,
+    }
+
+@router.post("/auth/refresh")
+async def auth_refresh(
+        user_sub: str,
+        token_save_service: SaveTokensService = Depends(get_save_token_service),
+        refresh_token_service: RefreshTokenService = Depends(get_refresh_token_service),
+):
+    payload, user_id = await refresh_token_service.update_tokens(user_sub)
+    token = await token_save_service.save_or_update_token(payload, user_id)
+
+    return {
+        "payload": payload,
+        "token": token,
+        "user_id": user_id,
     }
