@@ -29,7 +29,7 @@ class SaveTokensService:
         token = TokenSave(
             access_token=payload.get("access_token"),
             expires_at=self._expires_calculator(payload.get("expires_in")),
-            refresh_token=payload.get("refresh_token"),
+            refresh_token=payload.get("refresh_token", None),
             token_type=payload.get("token_type"),
             is_active=True,
             user_id=user_id,
