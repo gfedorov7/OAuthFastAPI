@@ -5,6 +5,7 @@ from src.api.auth.dependencies.repositories_dependencies import (
 )
 from src.api.auth.models import User, RefreshToken
 from src.api.auth.services.google_login_service import GoogleLoginService
+from src.api.auth.services.refresh_token_service import RefreshTokenService
 from src.api.auth.services.save_tokens_service import SaveTokensService
 from src.api.auth.services.save_user_service import UserSaveService
 from src.api.auth.utils.state_compare import StateCompare
@@ -52,3 +53,10 @@ def get_save_token_service(
         repo: BaseRepository[RefreshToken] = Depends(get_refresh_token_repository)
 ) -> SaveTokensService:
     return SaveTokensService(repo)
+
+def get_refresh_token_service(
+        user_repo: BaseRepository[User] = Depends(get_user_repository),
+        token_repo: BaseRepository[RefreshToken] = Depends(get_refresh_token_repository),
+        httpx_client: HttpxHttpClient = Depends(get_httpx_http_client),
+) -> RefreshTokenService:
+    return RefreshTokenService(httpx_client, token_repo, user_repo)
