@@ -36,6 +36,7 @@ class UserSaveService:
     @staticmethod
     def _fill_user_schema(payload: dict) -> dict:
         user = UserCreate(
+            user_oauth_id=payload.get("sub"),
             email=payload.get("email"),
             full_name=payload.get("name"),
             image=payload.get("picture"),
