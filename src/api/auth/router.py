@@ -1,6 +1,6 @@
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, Response, Request, Depends
+from fastapi import APIRouter, Response, Request, Depends, HTTPException
 from starlette.responses import RedirectResponse
 
 from src.api.auth.dependencies.repositories_dependencies import get_user_repository, get_refresh_token_repository
@@ -53,30 +53,33 @@ async def login_callback(
         user_save_service: UserSaveService = Depends(get_user_save_service),
         token_save_service: SaveTokensService = Depends(get_save_token_service),
 ):
-    check_valid_service.compare_token(state)
+    try:
+        check_valid_service.compare_token(state)
 
-    response_google = await exchange_service.get_tokens(code)
-    id_token = response_google.get("id_token")
+        response_google = await exchange_service.get_tokens(code)
+        id_token = response_google.get("id_token")
 
-    user = await user_save_service.save_user(id_token)
-    token = await token_save_service.save_or_update_token(response_google, user.id)
+        user = await user_save_service.save_user(id_token)
+        token = await token_save_service.save_or_update_token(response_google, user.id)
 
-    token_params = Token(
-        token_type=token.token_type,
-        access_token=token.access_token,
-    )
-    query_params = urlencode(token_params.model_dump())
+        token_params = Token(
+            token_type=token.token_type,
+            access_token=token.access_token,
+        )
+        query_params = urlencode(token_params.model_dump())
 
-    url = settings.oauth_settings.path_to_front_success_login + query_params
-    response = RedirectResponse(url)
-    response.set_cookie(
-        settings.oauth_settings.refresh_token_cookie_key,
-        token.refresh_token,
-        httponly=True,
-        secure=True,
-        path="/"
-    )
-    return response
+        url = settings.oauth_settings.path_to_front_success_login + query_params
+        response = RedirectResponse(url)
+        response.set_cookie(
+            settings.oauth_settings.refresh_token_cookie_key,
+            token.refresh_token,
+            httponly=True,
+            secure=True,
+            path="/"
+        )
+        return response
+    except Exception as error:
+        raise HTTPException(status_code=400, detail="Invalid Auth")
 
 @router.post("/auth/refresh")
 async def auth_refresh(
