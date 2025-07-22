@@ -1,5 +1,7 @@
 from typing import Sequence, Tuple
 
+from google.oauth2.reauth import refresh_grant
+
 from src.api.auth.schemas import UpdateTokenRequest
 from src.exceptions import NotFoundRecordByIdError
 from src.http_client.httpx_http_client import HttpxHttpClient
@@ -26,32 +28,24 @@ class RefreshTokenService:
         self.token_repository = token_repository
         self.user_repository = user_repository
 
-    async def update_tokens(self, user_sub: str) -> Tuple[dict, int]:
-        user_id = await self._find_user_id(user_sub)
-        tokens = await self._find_token(user_id)
+    async def update_tokens(self, refresh_token: str) -> Tuple[dict, int]:
+        tokens = await self._find_token(refresh_token)
+        token = self._get_refresh_token(tokens)
 
-        refresh_token = self._get_refresh_token(tokens)
+        params = self._fill_update_token_params(token.refresh_token)
 
-        params = self._fill_update_token_params(refresh_token)
+        return await self._send_request_to_update(params), token.user_id
 
-        return await self._send_request_to_update(params), user_id
-
-    async def _find_user_id(self, user_sub: str) -> int:
-        user = await self.user_repository.get_by_conditions(User.user_oauth_id == user_sub)
-        if not user:
-            raise NotFoundRecordByIdError(User.__name__, user_sub)
-        return user[0].id
-
-    async def _find_token(self, user_id: int) -> Sequence[RefreshToken]:
+    async def _find_token(self, refresh_token: str) -> Sequence[RefreshToken]:
         return await self.token_repository.get_by_conditions(
-            RefreshToken.user_id == user_id,
+            RefreshToken.refresh_token == refresh_token,
             RefreshToken.is_active == True,
         )
 
     @staticmethod
-    def _get_refresh_token(tokens: Sequence[RefreshToken]) -> str:
+    def _get_refresh_token(tokens: Sequence[RefreshToken]) -> RefreshToken:
         if tokens:
-            return tokens[0].refresh_token
+            return tokens[0]
         raise NotFoundToken()
 
     def _fill_update_token_params(self, refresh_token: str) -> dict:

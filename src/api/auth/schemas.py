@@ -44,3 +44,7 @@ class TokenSave(BaseModel):
     is_active: bool
     user_id: int
     token_type: str
+
+class Token(BaseModel):
+    token_type: str
+    access_token: str

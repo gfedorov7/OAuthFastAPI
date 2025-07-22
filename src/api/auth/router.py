@@ -2,7 +2,7 @@ from fastapi import APIRouter, Response, Request, Depends
 
 from src.api.auth.dependencies.repositories_dependencies import get_user_repository
 from src.api.auth.models import User
-from src.api.auth.schemas import UserRead
+from src.api.auth.schemas import UserRead, Token
 from src.api.auth.services.current_user_service import CurrentUserService
 from src.api.auth.services.exchange_code_to_token_service import ExchangeCodeToTokenService
 from src.api.auth.services.google_login_service import GoogleLoginService
@@ -16,10 +16,11 @@ from src.api.auth.services.save_tokens_service import SaveTokensService
 from src.api.auth.services.save_user_service import UserSaveService
 from src.api.auth.services.refresh_token_service import RefreshTokenService
 from src.api.auth.utils.get_token_from_header import get_token_from_header
+from src.config import settings
 from src.database.base_repository import BaseRepository
 from src.storage.storage_manager import ResponseAwareStorageManager
 from src.pagination import PaginationModel
-
+from src.utils.dependencies import get_cookie_storage_manager
 
 router = APIRouter(tags=["Google OAuth"])
 
@@ -59,18 +60,19 @@ async def login_callback(
     user = await user_save_service.save_user(id_token)
     token = await token_save_service.save_or_update_token(response_google, user.id)
 
-    return {
-        "user": user,
-        "token": token,
-    }
+    return Token(
+        token_type=token.token_type,
+        access_token=token.access_token,
+    )
 
 @router.post("/auth/refresh")
 async def auth_refresh(
-        user_sub: str,
+        cookie_storage: ResponseAwareStorageManager = Depends(get_cookie_storage_manager),
         token_save_service: SaveTokensService = Depends(get_save_token_service),
         refresh_token_service: RefreshTokenService = Depends(get_refresh_token_service),
 ):
-    payload, user_id = await refresh_token_service.update_tokens(user_sub)
+    refresh_token = cookie_storage.get_(settings.oauth_settings.refresh_token_cookie_key)
+    payload, user_id = await refresh_token_service.update_tokens(refresh_token)
     token = await token_save_service.save_or_update_token(payload, user_id)
 
     return {
