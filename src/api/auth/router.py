@@ -3,8 +3,8 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Response, Request, Depends
 from starlette.responses import RedirectResponse
 
-from src.api.auth.dependencies.repositories_dependencies import get_user_repository
-from src.api.auth.models import User
+from src.api.auth.dependencies.repositories_dependencies import get_user_repository, get_refresh_token_repository
+from src.api.auth.models import User, RefreshToken
 from src.api.auth.schemas import UserRead, Token
 from src.api.auth.services.current_user_service import CurrentUserService
 from src.api.auth.services.exchange_code_to_token_service import ExchangeCodeToTokenService
@@ -115,3 +115,25 @@ async def get_current_user(
         current_user: CurrentUserService = Depends(get_current_user_service),
 ) -> UserRead:
     return await current_user.get_current_user(token)
+
+@router.post("/auth/logout")
+async def logout(
+        response: Response,
+        request: Request,
+        token_repository: BaseRepository[Token] = Depends(get_refresh_token_repository),
+):
+    refresh_token = request.cookies.get(settings.oauth_settings.refresh_token_cookie_key)
+    response.delete_cookie(
+        settings.oauth_settings.refresh_token_cookie_key,
+        httponly=True,
+        secure=True,
+        path="/",
+    )
+
+    if not refresh_token:
+        return
+
+    tokens = await token_repository.get_by_conditions(RefreshToken.refresh_token == refresh_token)
+    if tokens:
+        token = tokens[0]
+        await token_repository.update(token.id, {"is_active": False})
