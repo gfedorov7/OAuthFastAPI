@@ -15,7 +15,7 @@ class OAuthSettings(BaseSettings):
     state_token_key: str = "oauth_state"
     current_token_type: str = "Bearer"
     refresh_token_cookie_key: str = "refresh_token"
-    path_to_front_success_login: str = "http://localhost:8080/success.html?"
+    path_to_front_success_login: str = "http://localhost:8080/pages/success.html?"
 
     google_auth_url: str = "https://accounts.google.com/o/oauth2/v2/auth?"
     google_exchange_url: str = "https://oauth2.googleapis.com/token"

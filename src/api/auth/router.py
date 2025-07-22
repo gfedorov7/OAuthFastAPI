@@ -46,7 +46,6 @@ async def login_google(
 
 @router.get("/auth/login/callback")
 async def login_callback(
-        response: Response,
         state: str,
         code: str,
         check_valid_service: CheckValidTokenService = Depends(get_check_valid_token_with_cookie_and_hmac_service),
@@ -54,12 +53,11 @@ async def login_callback(
         user_save_service: UserSaveService = Depends(get_user_save_service),
         token_save_service: SaveTokensService = Depends(get_save_token_service),
 ):
-    set_response_to_storage(check_valid_service, response)
     check_valid_service.compare_token(state)
 
     response_google = await exchange_service.get_tokens(code)
-
     id_token = response_google.get("id_token")
+
     user = await user_save_service.save_user(id_token)
     token = await token_save_service.save_or_update_token(response_google, user.id)
 

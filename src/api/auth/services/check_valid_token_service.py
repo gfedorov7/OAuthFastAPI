@@ -13,12 +13,8 @@ class CheckValidTokenService(GoogleServiceMixin):
         self.state_compare = state_compare
 
     def compare_token(self, google_token: str) -> None:
-        try:
-            saved_state = self._get_saved_state()
-            self._compare_state(google_token, saved_state)
-        except Exception as e:
-            self.storage_manager.delete_(self.state_token_key)
-            raise e
+        saved_state = self._get_saved_state()
+        self._compare_state(google_token, saved_state)
 
     def _get_saved_state(self) -> str:
         return self.storage_manager.get_(self.state_token_key)
