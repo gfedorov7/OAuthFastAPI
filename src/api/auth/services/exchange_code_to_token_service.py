@@ -30,7 +30,7 @@ class ExchangeCodeToTokenService(GoogleServiceMixin):
             code=code,
             client_id=self.client_id,
             client_secret=self.client_secret,
-            redirect_uri="http://localhost:8000/auth/login/callback",
+            redirect_uri=self.redirect_uri,
             grant_type=self.grant_type,
         )
         return exchange_code_params.model_dump()

@@ -11,7 +11,7 @@ class DataBaseSettings(BaseSettings):
 
 class OAuthSettings(BaseSettings):
     url: str = "http://localhost:8000/"
-    endpoint_callback: str = "auth/login/callback"
+    endpoint_callback: str = "api/auth/login/callback"
     state_token_key: str = "oauth_state"
     current_token_type: str = "Bearer"
     refresh_token_cookie_key: str = "refresh_token"
