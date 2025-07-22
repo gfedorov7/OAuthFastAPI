@@ -67,6 +67,7 @@ async def login_callback(
 
 @router.post("/auth/refresh")
 async def auth_refresh(
+        response: Response,
         cookie_storage: ResponseAwareStorageManager = Depends(get_cookie_storage_manager),
         token_save_service: SaveTokensService = Depends(get_save_token_service),
         refresh_token_service: RefreshTokenService = Depends(get_refresh_token_service),
@@ -75,11 +76,10 @@ async def auth_refresh(
     payload, user_id = await refresh_token_service.update_tokens(refresh_token)
     token = await token_save_service.save_or_update_token(payload, user_id)
 
-    return {
-        "payload": payload,
-        "token": token,
-        "user_id": user_id,
-    }
+    return Token(
+        token_type=token.token_type,
+        access_token=token.access_token,
+    )
 
 @router.get("/users")
 async def get_users(
@@ -100,5 +100,5 @@ async def get_users(
 async def get_current_user(
         token: str = Depends(get_token_from_header),
         current_user: CurrentUserService = Depends(get_current_user_service),
-):
+) -> UserRead:
     return await current_user.get_current_user(token)
