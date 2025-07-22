@@ -1,4 +1,4 @@
-from fastapi import Depends, Request
+from fastapi import Depends, Request, Response
 
 from src.api.auth.dependencies.repositories_dependencies import (
     get_user_repository, get_refresh_token_repository
@@ -51,9 +51,11 @@ def get_user_save_service(
     )
 
 def get_save_token_service(
-        repo: BaseRepository[RefreshToken] = Depends(get_refresh_token_repository)
+        response: Response,
+        repo: BaseRepository[RefreshToken] = Depends(get_refresh_token_repository),
+        cookie_manager: CookieStorageManager = Depends(get_cookie_storage_manager),
 ) -> SaveTokensService:
-    return SaveTokensService(repo)
+    return SaveTokensService(response, repo, cookie_manager)
 
 def get_refresh_token_service(
         user_repo: BaseRepository[User] = Depends(get_user_repository),
