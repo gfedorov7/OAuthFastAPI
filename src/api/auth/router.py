@@ -93,3 +93,10 @@ async def get_users(
     users_pydantic = [UserRead.model_validate(user, from_attributes=True) for user in users]
 
     return PaginationModel[UserRead](items=users_pydantic, total=count)
+
+@router.get("/current-user")
+async def get_current_user(
+        token: str = Depends(get_token_from_header),
+        current_user: CurrentUserService = Depends(get_current_user_service),
+):
+    return await current_user.get_current_user(token)
