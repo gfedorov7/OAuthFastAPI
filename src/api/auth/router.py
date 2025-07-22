@@ -1,4 +1,7 @@
+from urllib.parse import urlencode
+
 from fastapi import APIRouter, Response, Request, Depends
+from starlette.responses import RedirectResponse
 
 from src.api.auth.dependencies.repositories_dependencies import get_user_repository
 from src.api.auth.models import User
@@ -60,10 +63,22 @@ async def login_callback(
     user = await user_save_service.save_user(id_token)
     token = await token_save_service.save_or_update_token(response_google, user.id)
 
-    return Token(
+    token_params = Token(
         token_type=token.token_type,
         access_token=token.access_token,
     )
+    query_params = urlencode(token_params.model_dump())
+
+    url = settings.oauth_settings.path_to_front_success_login + query_params
+    response = RedirectResponse(url)
+    response.set_cookie(
+        settings.oauth_settings.refresh_token_cookie_key,
+        token.refresh_token,
+        httponly=True,
+        secure=True,
+        path="/"
+    )
+    return response
 
 @router.post("/auth/refresh")
 async def auth_refresh(

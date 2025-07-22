@@ -51,11 +51,9 @@ def get_user_save_service(
     )
 
 def get_save_token_service(
-        response: Response,
         repo: BaseRepository[RefreshToken] = Depends(get_refresh_token_repository),
-        cookie_manager: CookieStorageManager = Depends(get_cookie_storage_manager),
 ) -> SaveTokensService:
-    return SaveTokensService(response, repo, cookie_manager)
+    return SaveTokensService(repo)
 
 def get_refresh_token_service(
         user_repo: BaseRepository[User] = Depends(get_user_repository),

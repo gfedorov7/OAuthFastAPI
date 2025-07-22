@@ -32,10 +32,6 @@ class GoogleLoginService(GoogleServiceMixin):
 
         return response
 
-    def set_response_to_storage(self, response: Response) -> None:
-        if isinstance(self.storage_manager, CookieStorageManager):
-            self.storage_manager.set_response(response)
-
     def save_state(self) -> None:
         self.storage_manager.set_(
             self.state_token_key,
